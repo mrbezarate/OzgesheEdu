@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum LessonLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+}
+
+model User {
+  id           String         @id @default(cuid())
+  name         String
+  email        String         @unique
+  passwordHash String
+  role         Role           @default(STUDENT)
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  courses      Course[]       @relation("CourseCreator")
+  enrollments  Enrollment[]
+  scheduleSlots ScheduleSlot[] @relation("TeacherSlots")
+  studentSlots   ScheduleSlot[] @relation("StudentSlots")
+  orders       Order[]
+  teachingEnrollments Enrollment[] @relation("TeacherEnrollments")
+
+  @@index([role])
+}
+
+model Course {
+  id           String    @id @default(cuid())
+  title        String
+  description  String
+  level        LessonLevel
+  price        Decimal   @db.Decimal(10, 2)
+  isPublished  Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  createdById  String
+  createdBy    User      @relation("CourseCreator", fields: [createdById], references: [id])
+
+  lessons      Lesson[]
+  enrollments  Enrollment[]
+  schedule     ScheduleSlot[]
+
+  @@index([createdById])
+  @@index([isPublished])
+}
+
+model Lesson {
+  id           String    @id @default(cuid())
+  courseId     String
+  orderIndex   Int
+  title        String
+  description  String
+  videoUrl     String
+  homeworkText String
+  attachmentUrl String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  course       Course    @relation(fields: [courseId], references: [id])
+  progress     LessonProgress[]
+  schedule     ScheduleSlot[]
+
+  @@index([courseId])
+  @@unique([courseId, orderIndex])
+}
+
+model Enrollment {
+  id           String            @id @default(cuid())
+  studentId    String
+  courseId     String
+  teacherId    String?
+  status       EnrollmentStatus  @default(ACTIVE)
+  purchasedAt  DateTime          @default(now())
+
+  student      User              @relation(fields: [studentId], references: [id])
+  course       Course            @relation(fields: [courseId], references: [id])
+  teacher      User?             @relation("TeacherEnrollments", fields: [teacherId], references: [id])
+  lessonProgress LessonProgress[]
+
+  @@unique([studentId, courseId])
+  @@index([teacherId])
+}
+
+model LessonProgress {
+  id             String    @id @default(cuid())
+  enrollmentId   String
+  lessonId       String
+  isCompleted    Boolean   @default(false)
+  homeworkAnswer String?
+  submittedAt    DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  enrollment     Enrollment @relation(fields: [enrollmentId], references: [id])
+  lesson         Lesson     @relation(fields: [lessonId], references: [id])
+
+  @@unique([enrollmentId, lessonId])
+  @@index([lessonId])
+}
+
+model ScheduleSlot {
+  id              String   @id @default(cuid())
+  teacherId       String
+  courseId        String
+  lessonId        String?
+  studentId       String?
+  date            DateTime
+  durationMinutes Int
+  description     String?
+  onlineLink      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  teacher         User     @relation("TeacherSlots", fields: [teacherId], references: [id])
+  course          Course   @relation(fields: [courseId], references: [id])
+  lesson          Lesson?  @relation(fields: [lessonId], references: [id])
+  student         User?    @relation("StudentSlots", fields: [studentId], references: [id])
+
+  @@index([teacherId, date])
+  @@index([studentId])
+  @@index([courseId])
+}
+
+model Book {
+  id            String   @id @default(cuid())
+  title         String
+  author        String
+  description   String
+  price         Decimal  @db.Decimal(10, 2)
+  coverImageUrl String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orderItems    OrderItem[]
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  userId     String
+  totalPrice Decimal     @db.Decimal(10, 2)
+  createdAt  DateTime    @default(now())
+
+  user       User        @relation(fields: [userId], references: [id])
+  items      OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  bookId          String
+  quantity        Int      @default(1)
+  priceAtPurchase Decimal  @db.Decimal(10, 2)
+
+  order           Order    @relation(fields: [orderId], references: [id])
+  book            Book     @relation(fields: [bookId], references: [id])
+
+  @@index([bookId])
+  @@index([orderId])
+}
