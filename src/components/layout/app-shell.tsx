@@ -41,10 +41,10 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="hidden w-64 flex-col border-r border-border/60 bg-muted/20 p-4 md:flex">
-        <Link href="/" className="mb-6 flex items-center gap-2 text-base font-semibold">
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-xs text-primary-foreground">LF</span>
-          LinguaFlow
-        </Link>
+        <div className="mb-6 flex select-none items-center gap-2 text-base font-semibold">
+          <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-xs text-primary-foreground">OE</span>
+          OzgesheEdu
+        </div>
         <ScrollArea className="flex-1">
           <nav className="flex flex-col gap-1">
             {navigation.map((item) => {
@@ -78,9 +78,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
       </aside>
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/60 bg-background/90 px-4 backdrop-blur md:hidden">
-          <Link href="/" className="font-semibold">
-            LinguaFlow
-          </Link>
+          <div className="select-none font-semibold">
+            OzgesheEdu
+          </div>
           <div className="flex items-center gap-2">
             <Sheet>
               <SheetTrigger asChild>

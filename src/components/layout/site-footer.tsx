@@ -5,7 +5,7 @@ export const SiteFooter = () => {
     <footer className="border-t border-border/60 bg-muted/30">
       <div className="container grid gap-8 py-10 md:grid-cols-3">
         <div className="space-y-3">
-          <div className="text-lg font-semibold">LinguaFlow</div>
+          <div className="text-lg font-semibold">OzgesheEdu</div>
           <p className="text-sm text-muted-foreground">
             A modern learning platform for English learners and teachers to collaborate, practice, and grow with intention.
           </p>
@@ -40,9 +40,9 @@ export const SiteFooter = () => {
             <li>
               <a
                 className="text-muted-foreground transition hover:text-foreground"
-                href="mailto:hello@linguaflow.dev"
+                href="mailto:hello@ozgeshe.edu"
               >
-                hello@linguaflow.dev
+                hello@ozgeshe.edu
               </a>
             </li>
             <li>
@@ -69,7 +69,7 @@ export const SiteFooter = () => {
         </div>
       </div>
       <div className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} LinguaFlow. All rights reserved.
+        © {new Date().getFullYear()} OzgesheEdu. All rights reserved.
       </div>
     </footer>
   );

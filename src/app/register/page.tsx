@@ -55,7 +55,7 @@ export default function RegisterPage() {
       <div className="container flex flex-1 items-center justify-center py-20">
         <Card className="w-full max-w-md border-border/80">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-2xl">Create your LinguaFlow account</CardTitle>
+            <CardTitle className="text-2xl">Create your OzgesheEdu account</CardTitle>
             <CardDescription>Step into structured English learning in minutes.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

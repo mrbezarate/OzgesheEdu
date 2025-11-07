@@ -1,15 +1,21 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { ArrowRight, CheckCircle, PlayCircle, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { MarketingLayout } from "@/components/layout/marketing-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/components/providers/auth-provider";
 
 const testimonials = [
   {
     quote:
-      "LinguaFlow brings structure to my self-study. I log in, press play, and instantly feel guided toward my goals.",
+      "OzgesheEdu brings structure to my self-study. I log in, press play, and instantly feel guided toward my goals.",
     name: "Sophie, Product Designer",
   },
   {
@@ -46,11 +52,26 @@ const pricing = [
 ];
 
 export default function LandingPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/app/dashboard");
+    }
+  }, [loading, user, router]);
+
   return (
     <MarketingLayout>
       <section className="border-b border-border/60 bg-gradient-to-b from-background via-background to-muted/40">
         <div className="container grid gap-16 pb-20 pt-24 md:grid-cols-[1.1fr,0.9fr] md:items-center">
-          <div className="space-y-8">
+          <motion.div
+            className="space-y-8"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          >
             <Badge variant="success" className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700">
               <Sparkles className="h-4 w-4" />
               New: Guided speaking labs for B2 learners
@@ -60,7 +81,7 @@ export default function LandingPage() {
                 Learn English with structure,<br className="hidden sm:block" /> confidence, and human support.
               </h1>
               <p className="max-w-xl text-lg text-muted-foreground">
-                LinguaFlow blends cinematic lessons, teacher feedback, and curated books in one minimal workspace. Progress from A2 to C1 with measurable momentum.
+                OzgesheEdu blends cinematic lessons, teacher feedback, and curated books in one minimal workspace. Progress from A2 to C1 with measurable momentum.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -84,8 +105,15 @@ export default function LandingPage() {
                 Teacher lesson scheduler
               </div>
             </div>
-          </div>
-          <Card className="relative overflow-hidden border-none bg-card/70 shadow-2xl">
+          </motion.div>
+          <motion.div
+            className="h-full"
+            initial={{ opacity: 0, scale: 0.94 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+          >
+            <Card className="relative h-full overflow-hidden border-none bg-card/70 shadow-2xl">
             <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-primary/5" />
             <CardHeader>
               <CardTitle className="text-xl">Launch your next lesson in seconds</CardTitle>
@@ -118,21 +146,35 @@ export default function LandingPage() {
                 </Link>
               </Button>
             </CardContent>
-          </Card>
+            </Card>
+          </motion.div>
         </div>
       </section>
 
       <section className="border-b border-border/60 bg-background py-20">
         <div className="container grid gap-12 md:grid-cols-2">
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">How LinguaFlow works</h2>
+          <motion.div
+            className="space-y-6"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">How OzgesheEdu works</h2>
             <p className="text-lg text-muted-foreground">
               We combine on-demand lessons, collaborative feedback, and curated materials to help learners stay accountable without burning out.
             </p>
-          </div>
+          </motion.div>
           <div className="grid gap-6">
             {["Activate", "Practice", "Optimise"].map((stage, index) => (
-              <Card key={stage} className="border-border/70">
+              <motion.div
+                key={stage}
+                initial={{ opacity: 0, x: 20, y: 20 }}
+                whileInView={{ opacity: 1, x: 0, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.45, delay: index * 0.1 }}
+              >
+                <Card className="border-border/70">
                 <CardHeader className="flex flex-row items-start justify-between">
                   <div>
                     <CardTitle>{stage}</CardTitle>
@@ -146,7 +188,8 @@ export default function LandingPage() {
                   </div>
                   <Badge variant="secondary">0{index + 1}</Badge>
                 </CardHeader>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -154,7 +197,13 @@ export default function LandingPage() {
 
       <section className="border-b border-border/60 bg-muted/20 py-20">
         <div className="container grid gap-12 md:grid-cols-2">
-          <div className="space-y-6">
+          <motion.div
+            className="space-y-6"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+          >
             <h2 className="text-3xl font-bold tracking-tight">Built for students</h2>
             <p className="text-lg text-muted-foreground">
               Focus on outcomes. Track lessons, submit homework, revisit teacher feedback, and keep motivation high.
@@ -173,8 +222,14 @@ export default function LandingPage() {
                 Instant homework submissions and progress tracking
               </li>
             </ul>
-          </div>
-          <div className="space-y-6">
+          </motion.div>
+          <motion.div
+            className="space-y-6"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
             <h2 className="text-3xl font-bold tracking-tight">Empowering teachers</h2>
             <p className="text-lg text-muted-foreground">
               Streamline operations. Align calendar, lessons, and student metrics without juggling multiple tools.
@@ -193,7 +248,7 @@ export default function LandingPage() {
                 Cohort-level insights on student momentum and completion
               </li>
             </ul>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -202,7 +257,14 @@ export default function LandingPage() {
           <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl">Pricing to match your goals</h2>
           <div className="grid gap-8 md:grid-cols-3">
             {pricing.map((tier) => (
-              <Card key={tier.title} className="flex flex-col border-border/80">
+              <motion.div
+                key={tier.title}
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Card className="flex h-full flex-col border-border/80">
                 <CardHeader className="space-y-3">
                   <CardTitle>{tier.title}</CardTitle>
                   <div className="text-3xl font-semibold">{tier.price}</div>
@@ -221,7 +283,8 @@ export default function LandingPage() {
                     {tier.title === "Pro Team" ? "Talk to sales" : "Choose plan"}
                   </Button>
                 </CardContent>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -234,24 +297,38 @@ export default function LandingPage() {
           </h2>
           <div className="grid gap-6 md:grid-cols-3">
             {testimonials.map((testimonial) => (
-              <Card key={testimonial.name} className="border-border/70 bg-background/80 shadow-sm">
+              <motion.div
+                key={testimonial.name}
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4 }}
+              >
+                <Card className="border-border/70 bg-background/80 shadow-sm">
                 <CardContent className="space-y-4 p-6">
                   <p className="text-sm leading-relaxed text-muted-foreground">“{testimonial.quote}”</p>
                   <p className="text-sm font-semibold">{testimonial.name}</p>
                 </CardContent>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-background py-20">
+      <motion.section
+        className="bg-background py-20"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="container flex flex-col items-center gap-6 rounded-3xl border border-border/60 bg-gradient-to-r from-background via-background to-muted/30 px-8 py-16 text-center shadow-lg">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Ready to build your fluency system?
           </h2>
           <p className="max-w-2xl text-lg text-muted-foreground">
-            Join thousands of learners and coaches using LinguaFlow to deliver structured lessons, confident speaking, and measurable results.
+            Join thousands of learners and coaches using OzgesheEdu to deliver structured lessons, confident speaking, and measurable results.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button size="lg" asChild>
@@ -262,7 +339,7 @@ export default function LandingPage() {
             </Button>
           </div>
         </div>
-      </section>
+      </motion.section>
     </MarketingLayout>
   );
 }

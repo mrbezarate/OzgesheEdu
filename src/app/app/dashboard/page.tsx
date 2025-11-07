@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 
@@ -9,9 +10,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApi } from "@/hooks/use-api";
 import type { EnrollmentSummary, ScheduleSlotDto } from "@/types";
+import { useAuth } from "@/components/providers/auth-provider";
+import { Progress } from "@/components/ui/progress";
+import { xpConfig, getTierVisuals } from "@/config/xp";
+import { cn } from "@/lib/utils";
+import { XpDebugPanel } from "@/features/xp/debug-panel";
+
+const MAX_LEVEL = 50;
 
 export default function StudentDashboardPage() {
   const api = useApi();
+  const { user } = useAuth();
+  const [bonusXp, setBonusXp] = useState(0);
+  const isDebug = process.env.NODE_ENV !== "production";
 
   const { data: enrollments, isLoading: loadingEnrollments } = useQuery<{ enrollments: EnrollmentSummary[] }>({
     queryKey: ["my-enrollments"],
@@ -25,6 +36,17 @@ export default function StudentDashboardPage() {
 
   const inProgress = enrollments?.enrollments.filter((item) => item.course.progress < 100) ?? [];
   const completed = enrollments?.enrollments.filter((item) => item.course.progress >= 100) ?? [];
+  const totalCompletedLessons =
+    enrollments?.enrollments.reduce((sum, enrollment) => sum + enrollment.course.completedLessons, 0) ?? 0;
+  const completedCoursesCount = completed.length;
+
+  const lessonXp = totalCompletedLessons * xpConfig.perLesson;
+  const courseXp = completedCoursesCount * xpConfig.perCourse;
+  const xpEarned = lessonXp + courseXp + bonusXp;
+  const { level, xpIntoLevel, xpForNextLevel } = calculateLevel(xpEarned);
+  const xpPercent =
+    xpForNextLevel === 0 ? 100 : Math.min(100, Math.round((xpIntoLevel / xpForNextLevel) * 100));
+  const tierVisual = getTierVisuals(level);
 
   return (
     <div className="space-y-6">
@@ -33,7 +55,65 @@ export default function StudentDashboardPage() {
         <p className="text-muted-foreground">Continue your lessons and stay on top of homework submissions.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-2xl border border-white/10 p-6 shadow-xl transition hover:shadow-2xl md:col-span-2",
+            tierVisual.baseBackground,
+            tierVisual.textClass,
+          )}
+          style={{
+            backgroundImage: tierVisual.gradient,
+            backgroundSize: "cover",
+          }}
+        >
+          <span className={cn("pointer-events-none absolute rounded-full blur-3xl opacity-40", tierVisual.glowClasses[0])} />
+          <span className={cn("pointer-events-none absolute rounded-full blur-3xl opacity-40", tierVisual.glowClasses[1])} />
+          {tierVisual.sparkles.map((sparkle, index) => (
+            <span
+              key={`sparkle-${index}`}
+              className={cn("pointer-events-none absolute rounded-full blur-[1px] opacity-90", sparkle)}
+            />
+          ))}
+          <div className="relative z-10 flex flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="grid h-14 w-14 place-items-center rounded-full bg-white/20 text-lg font-semibold uppercase">
+                {user?.name
+                  ?.split(" ")
+                  .map((part) => part[0]?.toUpperCase())
+                  .join("")
+                  .slice(0, 2) ?? "OE"}
+              </div>
+              <div>
+                <p className="text-sm font-medium uppercase tracking-wide text-white/70">Profile</p>
+                <h2 className="text-2xl font-semibold">{user?.name ?? "Your profile"}</h2>
+                <p className={cn("text-sm", tierVisual.mutedText)}>
+                  Level {level} · {tierVisual.name} tier
+                </p>
+              </div>
+            </div>
+            <div className={cn("rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide", tierVisual.accentPill)}>
+              {xpEarned} XP
+            </div>
+          </div>
+          <div className="relative z-10 mt-6 space-y-4">
+            <div className="flex items-center justify-between text-sm">
+              <span>
+                Level {level} {level >= MAX_LEVEL ? "(max)" : ""}
+              </span>
+              <span>{xpForNextLevel ? `${xpForNextLevel - xpIntoLevel} XP to lvl ${Math.min(level + 1, MAX_LEVEL)}` : "Legend achieved"}</span>
+            </div>
+            <Progress
+              value={xpPercent}
+              className={cn("h-3 ring-1 ring-white/30", tierVisual.progressTrack)}
+              indicatorClassName={cn("transition-all", tierVisual.progressIndicator)}
+            />
+            <div className={cn("text-xs", tierVisual.mutedText)}>
+              {xpIntoLevel}/{xpForNextLevel || xpIntoLevel} XP in current level · {lessonXp} XP lessons · {courseXp} XP courses
+              {bonusXp ? ` · ${bonusXp} XP debug` : ""}
+            </div>
+          </div>
+        </div>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Courses in progress</CardDescription>
@@ -102,6 +182,14 @@ export default function StudentDashboardPage() {
         </CardContent>
       </Card>
 
+      {isDebug && (
+        <XpDebugPanel
+          bonusXp={bonusXp}
+          onBoost={(amount) => setBonusXp((prev) => prev + amount)}
+          onReset={() => setBonusXp(0)}
+        />
+      )}
+
       <Card className="border-border/70">
         <CardHeader>
           <CardTitle>Upcoming sessions</CardTitle>
@@ -148,4 +236,23 @@ export default function StudentDashboardPage() {
       </Card>
     </div>
   );
+}
+
+function calculateLevel(xp: number) {
+  let remaining = xp;
+  for (let level = 1; level <= MAX_LEVEL; level++) {
+    const requirement =
+      level === MAX_LEVEL
+        ? 0
+        : Math.min(4000, Math.round(120 * Math.pow(1.08, level - 1)));
+    if (requirement === 0 || remaining < requirement) {
+      return {
+        level,
+        xpIntoLevel: requirement === 0 ? requirement : remaining,
+        xpForNextLevel: requirement,
+      };
+    }
+    remaining -= requirement;
+  }
+  return { level: MAX_LEVEL, xpIntoLevel: 0, xpForNextLevel: 0 };
 }

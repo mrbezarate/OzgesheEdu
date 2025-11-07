@@ -23,9 +23,9 @@ export const SiteHeader = () => {
       <div className="container flex h-16 items-center justify-between gap-6">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-sm text-primary-foreground shadow-sm">
-            LF
+            OE
           </span>
-          LinguaFlow
+          OzgesheEdu
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
           {navItems.map((item) => {

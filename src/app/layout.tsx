@@ -17,9 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LinguaFlow — Guided English Learning",
+  title: "OzgesheEdu — Guided English Learning",
   description:
-    "LinguaFlow blends guided English courses, live teacher schedules, and a curated book store into one modern learning platform.",
+    "OzgesheEdu blends structured English programs, live teacher scheduling, and a curated book store into one modern learning platform.",
 };
 
 export default function RootLayout({

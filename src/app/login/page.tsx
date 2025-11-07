@@ -65,7 +65,7 @@ function LoginForm() {
     <div className="container flex flex-1 items-center justify-center py-20">
       <Card className="w-full max-w-md border-border/80">
         <CardHeader className="space-y-2">
-          <CardTitle className="text-2xl">Log in to LinguaFlow</CardTitle>
+          <CardTitle className="text-2xl">Log in to OzgesheEdu</CardTitle>
           <CardDescription>Welcome back. Continue where you left off.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
