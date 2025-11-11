@@ -1,4 +1,4 @@
-import { PrismaClient, Role, LessonLevel, EnrollmentStatus } from "@prisma/client";
+import { PrismaClient, Role, LessonLevel, EnrollmentStatus, Subject } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -12,6 +12,7 @@ async function main() {
     prisma.lesson.deleteMany(),
     prisma.enrollment.deleteMany(),
     prisma.course.deleteMany(),
+    prisma.courseGroup.deleteMany(),
     prisma.book.deleteMany(),
     prisma.user.deleteMany(),
   ]);
@@ -24,6 +25,7 @@ async function main() {
       email: "admin@linguaflow.dev",
       passwordHash: password,
       role: Role.ADMIN,
+      subjects: Object.values(Subject),
     },
   });
 
@@ -33,6 +35,7 @@ async function main() {
       email: "alice@linguaflow.dev",
       passwordHash: password,
       role: Role.TEACHER,
+      subjects: [Subject.ENGLISH, Subject.IELTS],
     },
   });
 
@@ -42,6 +45,7 @@ async function main() {
       email: "noah@linguaflow.dev",
       passwordHash: password,
       role: Role.TEACHER,
+      subjects: [Subject.IT, Subject.PROGRAMMING],
     },
   });
 
@@ -61,15 +65,48 @@ async function main() {
     ),
   );
 
+  const [ieltsGroup, entMathGroup, itGroup, englishGroup] = await Promise.all([
+    prisma.courseGroup.create({
+      data: {
+        name: "IELTS Preparation",
+        description: "Speaking, writing, and exam drills for IELTS candidates.",
+        subject: Subject.IELTS,
+      },
+    }),
+    prisma.courseGroup.create({
+      data: {
+        name: "ENT Mathematics",
+        description: "Targeted math prep for Kazakhstan's ENT exam.",
+        subject: Subject.ENT_PREP,
+      },
+    }),
+    prisma.courseGroup.create({
+      data: {
+        name: "IT & Programming",
+        description: "Practical courses for coding and computer science.",
+        subject: Subject.PROGRAMMING,
+      },
+    }),
+    prisma.courseGroup.create({
+      data: {
+        name: "English Fluency Lab",
+        description: "Conversational tracks and skill sprints for general English.",
+        subject: Subject.ENGLISH,
+      },
+    }),
+  ]);
+
   const [contemporaryCourse, examCourse] = await Promise.all([
     prisma.course.create({
       data: {
         title: "Contemporary Conversations",
         description: "Intermediate speaking course focused on real-world discussions and confidence building.",
         level: LessonLevel.B1,
+        subject: Subject.ENGLISH,
         price: "129.00",
         isPublished: true,
         createdById: teacherAlice.id,
+        groupId: englishGroup.id,
         lessons: {
           create: Array.from({ length: 6 }).map((_, index) => ({
             orderIndex: index + 1,
@@ -89,9 +126,11 @@ async function main() {
         title: "IELTS Accelerator",
         description: "Targeted preparation for IELTS speaking and writing with weekly feedback loops.",
         level: LessonLevel.B2,
+        subject: Subject.IELTS,
         price: "159.00",
         isPublished: true,
         createdById: teacherNoah.id,
+        groupId: ieltsGroup.id,
         lessons: {
           create: Array.from({ length: 5 }).map((_, index) => ({
             orderIndex: index + 1,
@@ -146,6 +185,54 @@ async function main() {
       courseId: examCourse.id,
       teacherId: teacherNoah.id,
       status: EnrollmentStatus.ACTIVE,
+    },
+  });
+
+  await prisma.course.create({
+    data: {
+      title: "ENT Mathematics Sprint",
+      description: "Short, intensive drills to master ENT problem types and logic.",
+      level: LessonLevel.B2,
+      subject: Subject.ENT_PREP,
+      price: "119.00",
+      isPublished: true,
+      createdById: teacherAlice.id,
+      groupId: entMathGroup.id,
+      lessons: {
+        create: [
+          {
+            orderIndex: 1,
+            title: "Number theory refresh",
+            description: "Prime numbers, divisibility, and contest-style problems.",
+            videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+            homeworkText: "Solve the provided 15 problems and upload your working.",
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.course.create({
+    data: {
+      title: "Python Starter for Teens",
+      description: "Project-based introduction to Python fundamentals and algorithms.",
+      level: LessonLevel.A2,
+      subject: Subject.PROGRAMMING,
+      price: "140.00",
+      isPublished: true,
+      createdById: teacherNoah.id,
+      groupId: itGroup.id,
+      lessons: {
+        create: [
+          {
+            orderIndex: 1,
+            title: "Variables & types",
+            description: "Hands-on exploration of Python basics.",
+            videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+            homeworkText: "Build a simple calculator script.",
+          },
+        ],
+      },
     },
   });
 

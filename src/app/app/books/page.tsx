@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useApi } from "@/hooks/use-api";
+import { useLanguage } from "@/components/providers/language-provider";
+import { getBooksTranslations } from "@/lib/books-translations";
+import { formatUsdAsKzt } from "@/lib/currency";
 import type { BookDto } from "@/types";
 
 interface CartItem {
@@ -18,6 +21,8 @@ interface CartItem {
 export default function AppBooksPage() {
   const api = useApi();
   const queryClient = useQueryClient();
+  const { language } = useLanguage();
+  const copy = getBooksTranslations(language).app;
   const { data, isLoading } = useQuery<{ books: BookDto[] }>({
     queryKey: ["books"],
     queryFn: () => api.get<{ books: BookDto[] }>("/api/books"),
@@ -56,6 +61,7 @@ export default function AppBooksPage() {
 
   const cartItems = useMemo(() => Object.values(cart), [cart]);
   const total = cartItems.reduce((sum, item) => sum + item.book.price * item.quantity, 0);
+  const totalFormatted = formatUsdAsKzt(total, language);
 
   const placeOrder = async () => {
     try {
@@ -65,7 +71,7 @@ export default function AppBooksPage() {
           quantity: item.quantity,
         })),
       });
-      setStatus("Order placed successfully.");
+      setStatus(copy.orderSuccess);
       setCart({});
       await queryClient.invalidateQueries({ queryKey: ["my-orders"] });
     } catch (error) {
@@ -77,20 +83,22 @@ export default function AppBooksPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Book store</h1>
-          <p className="text-muted-foreground">Enhance your lessons with curated reading material.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{copy.title}</h1>
+          <p className="text-muted-foreground">{copy.subtitle}</p>
         </div>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline">Cart ({cartItems.length})</Button>
+            <Button variant="outline">
+              {copy.cartLabel} ({cartItems.length})
+            </Button>
           </SheetTrigger>
           <SheetContent>
             <SheetHeader>
-              <SheetTitle>Your cart</SheetTitle>
+              <SheetTitle>{copy.cartTitle}</SheetTitle>
             </SheetHeader>
             <div className="mt-6 space-y-4">
               {cartItems.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Your cart is empty.</p>
+                <p className="text-sm text-muted-foreground">{copy.cartEmpty}</p>
               ) : (
                 cartItems.map((item) => (
                   <div key={item.book.id} className="flex items-start gap-3 rounded-lg border border-border/60 p-3">
@@ -101,13 +109,15 @@ export default function AppBooksPage() {
                       <div className="text-sm font-semibold">{item.book.title}</div>
                       <p className="text-xs text-muted-foreground">{item.book.author}</p>
                       <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                        <span>${item.book.price.toFixed(2)} × {item.quantity}</span>
+                        <span>
+                          {formatUsdAsKzt(item.book.price, language)} × {item.quantity}
+                        </span>
                         <Button
                           variant="ghost"
                           className="h-7 px-2 text-xs"
                           onClick={() => removeItem(item.book.id)}
                         >
-                          Remove
+                          {copy.remove}
                         </Button>
                       </div>
                     </div>
@@ -115,11 +125,11 @@ export default function AppBooksPage() {
                 ))
               )}
               <div className="border-t border-border/60 pt-4 text-sm font-semibold">
-                Total: ${total.toFixed(2)}
+                {copy.total}: {totalFormatted}
               </div>
               {status && <p className="text-sm text-muted-foreground">{status}</p>}
               <Button className="w-full" disabled={cartItems.length === 0} onClick={placeOrder}>
-                Place order
+                {copy.placeOrder}
               </Button>
             </div>
           </SheetContent>
@@ -127,7 +137,7 @@ export default function AppBooksPage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading books…</p>
+        <p className="text-sm text-muted-foreground">{copy.loading}</p>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {data?.books.map((book) => (
@@ -142,8 +152,10 @@ export default function AppBooksPage() {
               <CardContent className="mt-auto space-y-4">
                 <p className="text-sm text-muted-foreground">{book.description}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-semibold">${book.price.toFixed(2)}</span>
-                  <Button onClick={() => addToCart(book)}>Add to cart</Button>
+                  <span className="text-lg font-semibold">
+                    {formatUsdAsKzt(book.price, language)}
+                  </span>
+                  <Button onClick={() => addToCart(book)}>{copy.buttonAdd}</Button>
                 </div>
               </CardContent>
             </Card>
@@ -153,17 +165,21 @@ export default function AppBooksPage() {
 
       {orders?.orders.length ? (
         <div>
-          <h2 className="text-lg font-semibold">Recent orders</h2>
+          <h2 className="text-lg font-semibold">{copy.ordersTitle}</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {orders.orders.map((order) => (
               <div key={order.id} className="rounded-lg border border-border/60 bg-background/80 p-4 text-sm text-muted-foreground">
                 <div className="font-semibold text-foreground">Order {order.id.slice(-6)}</div>
                 <div>{new Date(order.createdAt).toLocaleString()}</div>
-                <div className="text-foreground font-semibold">${order.totalPrice.toFixed(2)}</div>
+                <div className="text-foreground font-semibold">
+                  {formatUsdAsKzt(order.totalPrice, language)}
+                </div>
               </div>
             ))}
           </div>
         </div>
+      ) : orders ? (
+        <p className="text-sm text-muted-foreground">{copy.ordersEmpty}</p>
       ) : null}
     </div>
   );

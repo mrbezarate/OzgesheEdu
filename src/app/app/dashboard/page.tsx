@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,24 +15,35 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Progress } from "@/components/ui/progress";
 import { xpConfig, getTierVisuals } from "@/config/xp";
 import { cn } from "@/lib/utils";
-import { XpDebugPanel } from "@/features/xp/debug-panel";
+import { useLanguage } from "@/components/providers/language-provider";
+import { getDashboardTranslations } from "@/lib/dashboard-translations";
 
 const MAX_LEVEL = 50;
 
 export default function StudentDashboardPage() {
   const api = useApi();
+  const router = useRouter();
   const { user } = useAuth();
-  const [bonusXp, setBonusXp] = useState(0);
-  const isDebug = process.env.NODE_ENV !== "production";
+  const { language } = useLanguage();
+  const t = getDashboardTranslations(language);
+  const isStudent = user?.role === "STUDENT";
+
+  useEffect(() => {
+    if (!user || isStudent) return;
+    const fallback = user.role === "TEACHER" ? "/app/teacher/dashboard" : "/app/admin/users";
+    router.replace(fallback);
+  }, [user, isStudent, router]);
 
   const { data: enrollments, isLoading: loadingEnrollments } = useQuery<{ enrollments: EnrollmentSummary[] }>({
     queryKey: ["my-enrollments"],
     queryFn: () => api.get<{ enrollments: EnrollmentSummary[] }>("/api/my/enrollments"),
+    enabled: isStudent,
   });
 
   const { data: schedule, isLoading: loadingSchedule } = useQuery<{ schedule: ScheduleSlotDto[] }>({
     queryKey: ["my-schedule"],
     queryFn: () => api.get<{ schedule: ScheduleSlotDto[] }>("/api/my/schedule"),
+    enabled: isStudent,
   });
 
   const inProgress = enrollments?.enrollments.filter((item) => item.course.progress < 100) ?? [];
@@ -42,17 +54,25 @@ export default function StudentDashboardPage() {
 
   const lessonXp = totalCompletedLessons * xpConfig.perLesson;
   const courseXp = completedCoursesCount * xpConfig.perCourse;
-  const xpEarned = lessonXp + courseXp + bonusXp;
+  const xpEarned = lessonXp + courseXp;
   const { level, xpIntoLevel, xpForNextLevel } = calculateLevel(xpEarned);
   const xpPercent =
     xpForNextLevel === 0 ? 100 : Math.min(100, Math.round((xpIntoLevel / xpForNextLevel) * 100));
   const tierVisual = getTierVisuals(level);
 
+  if (!isStudent) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center text-sm text-muted-foreground">
+        {t.redirectText}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-        <p className="text-muted-foreground">Continue your lessons and stay on top of homework submissions.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t.welcomeTitle}</h1>
+        <p className="text-muted-foreground">{t.welcomeSubtitle}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -85,10 +105,12 @@ export default function StudentDashboardPage() {
                   .slice(0, 2) ?? "OE"}
               </div>
               <div>
-                <p className="text-sm font-medium uppercase tracking-wide text-white/70">Profile</p>
+                <p className="text-sm font-medium uppercase tracking-wide text-white/70">
+                  {t.xpCard.profileLabel}
+                </p>
                 <h2 className="text-2xl font-semibold">{user?.name ?? "Your profile"}</h2>
                 <p className={cn("text-sm", tierVisual.mutedText)}>
-                  Level {level} · {tierVisual.name} tier
+                  {t.xpCard.levelLabel} {level} · {tierVisual.name}
                 </p>
               </div>
             </div>
@@ -99,9 +121,13 @@ export default function StudentDashboardPage() {
           <div className="relative z-10 mt-6 space-y-4">
             <div className="flex items-center justify-between text-sm">
               <span>
-                Level {level} {level >= MAX_LEVEL ? "(max)" : ""}
+                {t.xpCard.levelLabel} {level} {level >= MAX_LEVEL ? t.xpCard.maxLabel : ""}
               </span>
-              <span>{xpForNextLevel ? `${xpForNextLevel - xpIntoLevel} XP to lvl ${Math.min(level + 1, MAX_LEVEL)}` : "Legend achieved"}</span>
+              <span>
+                {xpForNextLevel
+                  ? `${xpForNextLevel - xpIntoLevel} ${t.xpCard.xpToPrefix} ${Math.min(level + 1, MAX_LEVEL)}`
+                  : t.xpCard.legendAchieved}
+              </span>
             </div>
             <Progress
               value={xpPercent}
@@ -109,38 +135,37 @@ export default function StudentDashboardPage() {
               indicatorClassName={cn("transition-all", tierVisual.progressIndicator)}
             />
             <div className={cn("text-xs", tierVisual.mutedText)}>
-              {xpIntoLevel}/{xpForNextLevel || xpIntoLevel} XP in current level · {lessonXp} XP lessons · {courseXp} XP courses
-              {bonusXp ? ` · ${bonusXp} XP debug` : ""}
+              {xpIntoLevel}/{xpForNextLevel || xpIntoLevel} XP · {lessonXp} {t.xpCard.lessonsLabel} · {courseXp} {t.xpCard.coursesLabel}
             </div>
           </div>
         </div>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Courses in progress</CardDescription>
+            <CardDescription>{t.metrics.inProgress.title}</CardDescription>
             <CardTitle className="text-3xl">{inProgress.length}</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Keep momentum by finishing this week&apos;s lessons.</CardContent>
+          <CardContent className="text-sm text-muted-foreground">{t.metrics.inProgress.description}</CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Completed courses</CardDescription>
+            <CardDescription>{t.metrics.completed.title}</CardDescription>
             <CardTitle className="text-3xl">{completed.length}</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Celebrate your results and revisit key lessons anytime.</CardContent>
+          <CardContent className="text-sm text-muted-foreground">{t.metrics.completed.description}</CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Lessons this week</CardDescription>
+            <CardDescription>{t.metrics.lessons.title}</CardDescription>
             <CardTitle className="text-3xl">{schedule?.schedule.length ?? 0}</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">Upcoming sessions booked with your teacher.</CardContent>
+          <CardContent className="text-sm text-muted-foreground">{t.metrics.lessons.description}</CardContent>
         </Card>
       </div>
 
       <Card className="border-border/70">
         <CardHeader>
-          <CardTitle>Active courses</CardTitle>
-          <CardDescription>Your enrolled programs and completion status.</CardDescription>
+          <CardTitle>{t.courses.title}</CardTitle>
+          <CardDescription>{t.courses.description}</CardDescription>
         </CardHeader>
         <CardContent>
           {loadingEnrollments ? (
@@ -150,7 +175,7 @@ export default function StudentDashboardPage() {
               ))}
             </div>
           ) : inProgress.length === 0 && completed.length === 0 ? (
-            <div className="text-sm text-muted-foreground">You have no active courses yet. Explore the catalogue to get started.</div>
+            <div className="text-sm text-muted-foreground">{t.courses.empty}</div>
           ) : (
             <div className="space-y-4">
               {enrollments?.enrollments.map((enrollment) => (
@@ -166,13 +191,15 @@ export default function StudentDashboardPage() {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {enrollment.course.completedLessons} of {enrollment.course.totalLessons} lessons completed
+                      {t.courses.progressLabel
+                        .replace("{completed}", enrollment.course.completedLessons.toString())
+                        .replace("{total}", enrollment.course.totalLessons.toString())}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-sm font-semibold">{enrollment.course.progress}%</div>
                     <Button asChild variant="outline" className="h-8 px-3 text-xs">
-                      <Link href={`/app/courses/${enrollment.course.id}`}>Continue</Link>
+                      <Link href={`/app/courses/${enrollment.course.id}`}>{t.courses.continue}</Link>
                     </Button>
                   </div>
                 </div>
@@ -182,18 +209,10 @@ export default function StudentDashboardPage() {
         </CardContent>
       </Card>
 
-      {isDebug && (
-        <XpDebugPanel
-          bonusXp={bonusXp}
-          onBoost={(amount) => setBonusXp((prev) => prev + amount)}
-          onReset={() => setBonusXp(0)}
-        />
-      )}
-
       <Card className="border-border/70">
         <CardHeader>
-          <CardTitle>Upcoming sessions</CardTitle>
-          <CardDescription>Stay prepared for your live lessons.</CardDescription>
+          <CardTitle>{t.schedule.title}</CardTitle>
+          <CardDescription>{t.schedule.description}</CardDescription>
         </CardHeader>
         <CardContent>
           {loadingSchedule ? (
@@ -216,13 +235,15 @@ export default function StudentDashboardPage() {
                         })}
                       </p>
                     </div>
-                    <Badge variant="secondary">{slot.durationMinutes} mins</Badge>
+                    <Badge variant="secondary">
+                      {slot.durationMinutes} {t.schedule.durationSuffix}
+                    </Badge>
                   </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{slot.description ?? "Live coaching session"}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{slot.description ?? t.schedule.sessionFallback}</p>
                   {slot.onlineLink && (
                     <Button variant="ghost" className="px-0 h-auto text-sm font-medium" asChild>
                       <a href={slot.onlineLink} target="_blank" rel="noreferrer">
-                        Join session
+                        {t.schedule.joinCta}
                       </a>
                     </Button>
                   )}
@@ -230,7 +251,7 @@ export default function StudentDashboardPage() {
               ))}
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground">No upcoming lessons yet. Coordinate with your teacher to schedule the next session.</div>
+            <div className="text-sm text-muted-foreground">{t.schedule.empty}</div>
           )}
         </CardContent>
       </Card>

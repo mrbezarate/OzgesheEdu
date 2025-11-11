@@ -14,15 +14,24 @@ export async function GET(request: NextRequest) {
       include: {
         lessons: true,
         enrollments: true,
+        group: { select: { id: true, name: true, subject: true, description: true } },
       },
       orderBy: { createdAt: "desc" },
     });
 
     return jsonOk({
       courses: courses.map((course) => ({
-        ...course,
+        id: course.id,
+        createdById: course.createdById,
+        createdAt: course.createdAt,
+        title: course.title,
+        description: course.description,
+        level: course.level,
+        subject: course.subject,
         price: Number(course.price),
-        lessons: course.lessons.sort((a, b) => a.orderIndex - b.orderIndex),
+        isPublished: course.isPublished,
+        group: course.group,
+        lessons: [...course.lessons].sort((a, b) => a.orderIndex - b.orderIndex),
         enrollmentCount: course.enrollments.length,
       })),
     });

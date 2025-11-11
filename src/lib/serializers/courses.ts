@@ -1,8 +1,9 @@
-import { Course, Lesson, User } from "@prisma/client";
+import { Course, Lesson, User, CourseGroup } from "@prisma/client";
 
 type CourseWithRelations = Course & {
   createdBy?: Pick<User, "id" | "name"> | null;
   lessons?: Lesson[];
+  group?: Pick<CourseGroup, "id" | "name" | "subject" | "description"> | null;
 };
 
 type LessonWithProgress = Lesson & {
@@ -15,6 +16,7 @@ export function serializeCourse(course: CourseWithRelations) {
     title: course.title,
     description: course.description,
     level: course.level,
+    subject: course.subject,
     price: Number(course.price),
     isPublished: course.isPublished,
     createdAt: course.createdAt,
@@ -23,6 +25,14 @@ export function serializeCourse(course: CourseWithRelations) {
       ? {
           id: course.createdBy.id,
           name: course.createdBy.name,
+        }
+      : null,
+    group: course.group
+      ? {
+          id: course.group.id,
+          name: course.group.name,
+          subject: course.group.subject,
+          description: course.group.description,
         }
       : null,
     lessons: course.lessons?.sort((a, b) => a.orderIndex - b.orderIndex) ?? [],

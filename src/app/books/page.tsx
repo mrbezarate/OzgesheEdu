@@ -9,9 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiGet } from "@/lib/api-client";
+import { useLanguage } from "@/components/providers/language-provider";
+import { getBooksTranslations } from "@/lib/books-translations";
+import { formatUsdAsKzt } from "@/lib/currency";
 import type { BookDto } from "@/types";
 
 export default function BooksPage() {
+  const { language } = useLanguage();
+  const copy = getBooksTranslations(language).public;
   const [books, setBooks] = useState<BookDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,9 +32,9 @@ export default function BooksPage() {
     <MarketingLayout>
       <div className="container space-y-12 py-20">
         <div className="mx-auto max-w-2xl text-center space-y-3">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Curated English bookshelf</h1>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{copy.title}</h1>
           <p className="text-muted-foreground">
-            Discover instructor-recommended books to amplify lessons, sharpen grammar, and fuel confident conversations.
+            {copy.description}
           </p>
         </div>
         {loading ? (
@@ -39,7 +44,7 @@ export default function BooksPage() {
             ))}
           </div>
         ) : error ? (
-          <p className="text-center text-destructive">{error}</p>
+          <p className="text-center text-destructive">{error || copy.error}</p>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {books.map((book) => (
@@ -59,9 +64,11 @@ export default function BooksPage() {
                 <CardContent className="mt-auto space-y-4">
                   <p className="text-sm text-muted-foreground">{book.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold">${book.price.toFixed(2)}</span>
+                    <span className="text-lg font-semibold">
+                      {formatUsdAsKzt(book.price, language)}
+                    </span>
                     <Button asChild variant="outline">
-                      <Link href="/login?redirect=/app/books">Add to cart</Link>
+                      <Link href="/login?redirect=/app/books">{copy.button}</Link>
                     </Button>
                   </div>
                 </CardContent>

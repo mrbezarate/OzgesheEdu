@@ -1,12 +1,13 @@
-import { EnrollmentStatus, LessonLevel, Role } from "@prisma/client";
+import { EnrollmentStatus, LessonLevel, Role, Subject } from "@prisma/client";
 
 export interface AppUser {
   id: string;
   name: string;
   email: string;
   role: Role;
-  createdAt: string | Date;
-  updatedAt: string | Date;
+  subjects?: Subject[];
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface LessonDto {
@@ -25,6 +26,7 @@ export interface CourseDto {
   title: string;
   description: string;
   level: LessonLevel;
+  subject: Subject;
   price: number;
   isPublished: boolean;
   createdAt: string | Date;
@@ -33,6 +35,7 @@ export interface CourseDto {
     id: string;
     name: string;
   } | null;
+  group?: { id: string; name: string; subject: Subject; description?: string | null } | null;
   lessons?: LessonDto[];
 }
 
@@ -98,4 +101,12 @@ export interface TeacherEnrollmentDto {
   purchasedAt: string;
   student: { id: string; name: string; email: string };
   course: { id: string; title: string; level: LessonLevel };
+}
+
+export interface CourseGroupDto {
+  id: string;
+  name: string;
+  description?: string | null;
+  subject: Subject;
+  _count?: { courses: number };
 }

@@ -169,10 +169,14 @@ export default function LandingPage() {
             </p>
             <ul className="space-y-4 text-sm text-muted-foreground">
               {t.audience.students.bullets.map((bullet) => (
-                <li key={bullet} className="flex items-start gap-3">
+                <motion.li
+                  key={bullet}
+                  className="flex items-start gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/40"
+                  whileHover={{ scale: 1.01 }}
+                >
                   <CheckCircle className="mt-1 h-4 w-4 text-primary" />
-                  {bullet}
-                </li>
+                  <span>{bullet}</span>
+                </motion.li>
               ))}
             </ul>
           </motion.div>
@@ -189,10 +193,14 @@ export default function LandingPage() {
             </p>
             <ul className="space-y-4 text-sm text-muted-foreground">
               {t.audience.teachers.bullets.map((bullet) => (
-                <li key={bullet} className="flex items-start gap-3">
+                <motion.li
+                  key={bullet}
+                  className="flex items-start gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/40"
+                  whileHover={{ scale: 1.01 }}
+                >
                   <CheckCircle className="mt-1 h-4 w-4 text-primary" />
-                  {bullet}
-                </li>
+                  <span>{bullet}</span>
+                </motion.li>
               ))}
             </ul>
           </motion.div>

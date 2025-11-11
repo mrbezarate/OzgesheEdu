@@ -1,5 +1,6 @@
 "use client";
 
+import { Role } from "@prisma/client";
 import { createContext, startTransition, useContext, useEffect, useMemo, useState } from "react";
 
 import { apiGet, apiPost } from "@/lib/api-client";
@@ -14,6 +15,7 @@ interface AuthContextValue {
     name: string;
     email: string;
     password: string;
+    role?: Role;
   }) => Promise<void>;
   logout: () => void;
   setUser: (user: AppUser | null) => void;
@@ -89,11 +91,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   };
 
-  const register = async ({ name, email, password }: { name: string; email: string; password: string }) => {
+  const register = async ({ name, email, password, role }: { name: string; email: string; password: string; role?: Role }) => {
     const response = await apiPost<{ token: string; user: AppUser }>("/api/auth/register", {
       name,
       email,
       password,
+      role,
     });
     setToken(response.token);
     setUser(response.user);

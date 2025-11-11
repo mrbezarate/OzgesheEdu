@@ -6,17 +6,22 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/providers/auth-provider";
-
-const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/courses", label: "Courses" },
-  { href: "/books", label: "Books" },
-  { href: "/login", label: "Login" },
-];
+import { LanguageToggle } from "@/components/language-toggle";
+import { useLanguage } from "@/components/providers/language-provider";
+import { getCommonTranslations } from "@/lib/common-translations";
 
 export const SiteHeader = () => {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { language } = useLanguage();
+  const common = getCommonTranslations(language);
+
+  const navItems = [
+    { href: "/", label: common.nav.home },
+    { href: "/courses", label: common.nav.courses },
+    { href: "/books", label: common.nav.books },
+    { href: "/login", label: common.nav.login },
+  ];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -48,24 +53,25 @@ export const SiteHeader = () => {
           })}
         </nav>
         <div className="flex items-center gap-2">
+          <LanguageToggle />
           {user ? (
             <>
               <Button variant="ghost" className="hidden md:inline-flex" asChild>
                 <Link href={user.role === "STUDENT" ? "/app/dashboard" : `/app/${user.role.toLowerCase()}/dashboard`}>
-                  Dashboard
+                  {common.auth.dashboard}
                 </Link>
               </Button>
               <Button variant="outline" onClick={logout}>
-                Logout
+                {common.auth.logout}
               </Button>
             </>
           ) : (
             <>
               <Button variant="ghost" className="hidden md:inline-flex" asChild>
-                <Link href="/login">Log in</Link>
+                <Link href="/login">{common.auth.login}</Link>
               </Button>
               <Button asChild>
-                <Link href="/register">Get started</Link>
+                <Link href="/register">{common.auth.signup}</Link>
               </Button>
             </>
           )}

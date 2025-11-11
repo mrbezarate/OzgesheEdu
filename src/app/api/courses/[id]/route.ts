@@ -20,6 +20,7 @@ export async function GET(
       include: {
         createdBy: { select: { id: true, name: true } },
         lessons: { orderBy: { orderIndex: "asc" } },
+        group: { select: { id: true, name: true, subject: true, description: true } },
       },
     });
 
@@ -95,18 +96,39 @@ export async function PATCH(
       throw Object.assign(new Error("Forbidden"), { statusCode: 403 });
     }
 
+    const nextSubject = payload.subject ?? course.subject;
+    const nextGroupId = payload.groupId ?? course.groupId;
+
+    if (payload.subject && user.role === Role.TEACHER && !user.subjects?.includes(payload.subject)) {
+      throw Object.assign(new Error("Subject not permitted"), { statusCode: 403 });
+    }
+
+    let group = null;
+    if (nextGroupId) {
+      group = await prisma.courseGroup.findUnique({ where: { id: nextGroupId }, select: { id: true, subject: true } });
+      if (!group) {
+        throw Object.assign(new Error("Course group not found"), { statusCode: 404 });
+      }
+      if (group.subject !== nextSubject) {
+        throw Object.assign(new Error("Group subject mismatch"), { statusCode: 400 });
+      }
+    }
+
     const updated = await prisma.course.update({
       where: { id },
       data: {
         title: payload.title ?? course.title,
         description: payload.description ?? course.description,
         level: payload.level ?? course.level,
+        subject: nextSubject,
+        groupId: nextGroupId ?? null,
         price: payload.price !== undefined ? payload.price.toFixed(2) : course.price,
         isPublished: payload.isPublished ?? course.isPublished,
       },
       include: {
         createdBy: { select: { id: true, name: true } },
         lessons: { orderBy: { orderIndex: "asc" } },
+        group: { select: { id: true, name: true, subject: true, description: true } },
       },
     });
 
@@ -141,7 +163,17 @@ export async function DELETE(
       throw Object.assign(new Error("Forbidden"), { statusCode: 403 });
     }
 
-    await prisma.course.delete({ where: { id } });
+    await prisma.$transaction([
+      prisma.lessonProgress.deleteMany({
+        where: {
+          lesson: { courseId: id },
+        },
+      }),
+      prisma.scheduleSlot.deleteMany({ where: { courseId: id } }),
+      prisma.lesson.deleteMany({ where: { courseId: id } }),
+      prisma.enrollment.deleteMany({ where: { courseId: id } }),
+      prisma.course.delete({ where: { id } }),
+    ]);
 
     return jsonOk({ success: true });
   } catch (error) {

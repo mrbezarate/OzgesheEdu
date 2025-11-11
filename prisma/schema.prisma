@@ -13,6 +13,23 @@ enum Role {
   ADMIN
 }
 
+enum Subject {
+  ENGLISH
+  IELTS
+  KAZAKH
+  RUSSIAN
+  MATH
+  PHYSICS
+  CHEMISTRY
+  BIOLOGY
+  HISTORY
+  IT
+  PROGRAMMING
+  NIS_PREP
+  ENT_PREP
+  OTHER
+}
+
 enum EnrollmentStatus {
   ACTIVE
   COMPLETED
@@ -34,6 +51,7 @@ model User {
   passwordHash String
   role         Role           @default(STUDENT)
   isActive     Boolean        @default(true)
+  subjects     Subject[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -52,6 +70,7 @@ model Course {
   title        String
   description  String
   level        LessonLevel
+  subject      Subject
   price        Decimal   @db.Decimal(10, 2)
   isPublished  Boolean   @default(false)
   createdAt    DateTime  @default(now())
@@ -59,6 +78,8 @@ model Course {
 
   createdById  String
   createdBy    User      @relation("CourseCreator", fields: [createdById], references: [id])
+  groupId      String?
+  group        CourseGroup? @relation(fields: [groupId], references: [id])
 
   lessons      Lesson[]
   enrollments  Enrollment[]
@@ -66,6 +87,19 @@ model Course {
 
   @@index([createdById])
   @@index([isPublished])
+  @@index([groupId])
+  @@index([subject])
+}
+
+model CourseGroup {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  subject     Subject
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses     Course[]
 }
 
 model Lesson {

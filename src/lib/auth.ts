@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role, Subject } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 
@@ -17,6 +17,7 @@ export interface AuthenticatedUser {
   email: string;
   name: string;
   role: Role;
+  subjects: Subject[];
 }
 
 export function signAuthToken(payload: TokenPayload) {
@@ -56,6 +57,7 @@ export async function requireAuth(
       name: true,
       role: true,
       isActive: true,
+      subjects: true,
     },
   });
 
@@ -72,6 +74,7 @@ export async function requireAuth(
     email: user.email,
     name: user.name,
     role: user.role,
+    subjects: user.subjects,
   };
 }
 
@@ -92,6 +95,7 @@ export async function getOptionalUser(
         name: true,
         role: true,
         isActive: true,
+        subjects: true,
       },
     });
     if (!user || !user.isActive) return null;
@@ -100,6 +104,7 @@ export async function getOptionalUser(
       email: user.email,
       name: user.name,
       role: user.role,
+      subjects: user.subjects,
     };
   } catch {
     return null;

@@ -14,6 +14,7 @@ export async function GET() {
       include: {
         createdBy: { select: { id: true, name: true } },
         lessons: true,
+        group: { select: { id: true, name: true, subject: true, description: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -33,18 +34,38 @@ export async function POST(request: NextRequest) {
     const user = await requireAuth(request, { roles: [Role.TEACHER, Role.ADMIN] });
     const payload = courseCreateSchema.parse(await request.json());
 
+    const group = await prisma.courseGroup.findUnique({
+      where: { id: payload.groupId },
+      select: { id: true, name: true, subject: true },
+    });
+
+    if (!group) {
+      throw Object.assign(new Error("Course group not found"), { statusCode: 404 });
+    }
+
+    if (group.subject !== payload.subject) {
+      throw Object.assign(new Error("Course subject must match the group subject"), { statusCode: 400 });
+    }
+
+    if (user.role === Role.TEACHER && !user.subjects?.includes(payload.subject)) {
+      throw Object.assign(new Error("Subject not permitted for this teacher"), { statusCode: 403 });
+    }
+
     const course = await prisma.course.create({
       data: {
         title: payload.title,
         description: payload.description,
         level: payload.level,
+        subject: payload.subject,
         price: payload.price.toFixed(2),
         isPublished: payload.isPublished ?? false,
         createdById: user.id,
+        groupId: group.id,
       },
       include: {
         createdBy: { select: { id: true, name: true } },
         lessons: true,
+        group: { select: { id: true, name: true, subject: true, description: true } },
       },
     });
 
